@@ -14,16 +14,16 @@ const (
 )
 
 type Static struct {
-	Chave                string
-	MerchantCategoryCode string
-	TransactionCurrency  string
-	CountryCode          string
-	MerchantName         string
-	MerchantCity         string
-	PostalCode           string
-	TransactionId        string
+	Chave                string `json:"chave"`
+	MerchantCategoryCode string `json:"mechantCategoryCode"`
+	TransactionCurrency  string `json:"transactionCurrency"`
+	CountryCode          string `json:"countryCode"`
+	MerchantName         string `json:"merchantName"`
+	MerchantCity         string `json:"merchantCity"`
+	PostalCode           string `json:"postalCode"`
+	TransactionId        string `json:"transactionId"`
 	// Transaction amount in cents
-	TransactionAmount int
+	TransactionAmount int `json:"transactionAmount"`
 
 	builder Builder
 }
@@ -88,6 +88,7 @@ func (s *Static) BRCode() (string, error) {
 	return s.builder.Build()
 }
 
+// Creates and saves a QRCode in the specified path. Image format is PNG.
 func (s Static) SaveFile(path string) error {
 	brCode, err := s.BRCode()
 	if err != nil {
@@ -101,6 +102,7 @@ func (s Static) SaveFile(path string) error {
 	return nil
 }
 
+// TODO: Add options as params
 func (s Static) Encode() ([]byte, error) {
 	brCode, err := s.BRCode()
 	if err != nil {
@@ -115,12 +117,14 @@ func (s Static) Encode() ([]byte, error) {
 	return png, nil
 }
 
+// Encodes and serves the QRCode image
+// TODO: Add options as params
 func (s Static) Serve(w http.ResponseWriter) error {
-	w.Header().Add("Content-Type", "image/png")
 	png, err := s.Encode()
 	if err != nil {
 		return err
 	}
+	w.Header().Add("Content-Type", "image/png")
 	w.Write(png)
 	return nil
 }

@@ -4,9 +4,9 @@ Lib para gerar qrcode estático de cobrança do pix em Go, além fazer encode e 
 
 ## TODOs
 
-1. Criar consts com os IDs dos campos
-2. Criar
-
+1. Criar consts com os IDs dos campos;
+2. Criar decoder;
+3. Completar a especificação (Unreserved Templates).
 
 ## Exemplos
 

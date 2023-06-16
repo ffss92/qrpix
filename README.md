@@ -1,8 +1,14 @@
 # qrpix
 
-Lib para gerar qrcode estático de cobrança do pix em Go.
+Lib para gerar qrcode estático de cobrança do pix em Go, além fazer encode e decode de BRCodes.
 
-## Exemplo
+## TODOs
+
+1. Criar consts com os IDs dos campos
+2. Criar
+
+
+## Exemplos
 
 - Salvando imagem
 

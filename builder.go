@@ -11,10 +11,9 @@ import (
 // Used to build the BRCode
 type Builder map[string]TLV
 
-func (b Builder) Add(tlvs ...TLV) {
-	for _, tlv := range tlvs {
-		b[tlv.FieldID()] = tlv
-	}
+func (b Builder) Add(tlv TLV) Builder {
+	b[tlv.FieldID()] = tlv
+	return b
 }
 
 func (b Builder) toSlice() []TLV {
@@ -59,14 +58,14 @@ func (b *Builder) Clear() {
 	(*b) = Builder{}
 }
 
-func (b *Builder) AddPayloadFormatIndicator(value string) {
+func (b Builder) AddPayloadFormatIndicator(value string) {
 	b.Add(Primitive{
 		ID:    "00",
 		Value: value,
 	})
 }
 
-func (b *Builder) AddMerchantAccountInformation(gui, chave string) {
+func (b Builder) AddMerchantAccountInformation(gui, chave string) {
 	t := Template{
 		ID: "26",
 	}
@@ -75,14 +74,14 @@ func (b *Builder) AddMerchantAccountInformation(gui, chave string) {
 	b.Add(t)
 }
 
-func (b *Builder) AddMerchantCategoryCode(code string) {
+func (b Builder) AddMerchantCategoryCode(code string) {
 	b.Add(Primitive{
 		ID:    "52",
 		Value: code,
 	})
 }
 
-func (b *Builder) AddTransactionCurrency(code string) {
+func (b Builder) AddTransactionCurrency(code string) {
 	b.Add(Primitive{
 		ID:    "53",
 		Value: code,
@@ -90,7 +89,7 @@ func (b *Builder) AddTransactionCurrency(code string) {
 }
 
 // Adds the transaction amount in cents. Ex: 100 == 1 real
-func (b *Builder) AddTransactionAmount(amount int) {
+func (b Builder) AddTransactionAmount(amount int) {
 	if amount == 0 {
 		return
 	}
@@ -101,35 +100,35 @@ func (b *Builder) AddTransactionAmount(amount int) {
 	})
 }
 
-func (b *Builder) AddCountryCode(code string) {
+func (b Builder) AddCountryCode(code string) {
 	b.Add(Primitive{
 		ID:    "58",
 		Value: code,
 	})
 }
 
-func (b *Builder) AddMerchantName(name string) {
+func (b Builder) AddMerchantName(name string) {
 	b.Add(Primitive{
 		ID:    "59",
 		Value: name,
 	})
 }
 
-func (b *Builder) AddMerchantCity(city string) {
+func (b Builder) AddMerchantCity(city string) {
 	b.Add(Primitive{
 		ID:    "60",
 		Value: city,
 	})
 }
 
-func (b *Builder) AddPostalCode(postalCode string) {
+func (b Builder) AddPostalCode(postalCode string) {
 	b.Add(Primitive{
 		ID:    "61",
 		Value: postalCode,
 	})
 }
 
-func (b *Builder) AddAdditionalDataField(transactionId string) {
+func (b Builder) AddAdditionalDataField(transactionId string) {
 	t := Template{
 		ID: "62",
 	}
@@ -137,7 +136,7 @@ func (b *Builder) AddAdditionalDataField(transactionId string) {
 	b.Add(t)
 }
 
-func (b *Builder) addCRC16(data string) string {
+func (b Builder) addCRC16(data string) string {
 	appended := data + "6304"
 	ccittCrc := crc.CalculateCRC(crc.CCITT, []byte(appended))
 	return fmt.Sprintf("%s%04X", appended, ccittCrc)

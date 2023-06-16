@@ -9,28 +9,40 @@ import (
 )
 
 // Used to build the BRCode
-type Builder []TLV
+type Builder map[string]TLV
 
-func (b *Builder) Add(tlvs ...TLV) {
+func (b Builder) Add(tlvs ...TLV) {
 	for _, tlv := range tlvs {
-		(*b) = append((*b), tlv)
+		b[tlv.FieldID()] = tlv
 	}
 }
 
-// Template inner values are safe since they are not being unwrapped
-func (b *Builder) sortByID() {
-	slices.SortFunc[TLV]((*b), func(a, b TLV) bool {
+func (b Builder) toSlice() []TLV {
+	tlvs := []TLV{}
+	for _, tlv := range b {
+		tlvs = append(tlvs, tlv)
+	}
+	return tlvs
+}
+
+func (b Builder) Sorted() []TLV {
+	tlvs := b.toSlice()
+	slices.SortFunc[TLV](tlvs, func(a, b TLV) bool {
 		aid, _ := strconv.Atoi(a.FieldID())
 		bid, _ := strconv.Atoi(b.FieldID())
 		return aid < bid
 	})
+	return tlvs
 }
 
 // Build and validates the BRCode. CRC16 is added automatically.
 func (b Builder) Build() (string, error) {
-	b.sortByID()
-	var res string
-	for _, tlv := range b {
+	var (
+		res  string
+		tlvs = b.Sorted()
+	)
+
+	for _, tlv := range tlvs {
 		s, err := tlv.TLV()
 		if err != nil {
 			return "", err

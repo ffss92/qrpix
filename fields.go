@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	primitive = "primitive"
-	template  = "template"
+	FieldPrimitive = "primitive"
+	FieldTemplate  = "template"
 )
 
 var (
@@ -18,102 +18,94 @@ var (
 			Name:     "Payload Format Indicator",
 			MaxSize:  2,
 			MinSize:  2,
-			Default:  "01",
-			Type:     primitive,
+			Type:     FieldPrimitive,
 			Required: true,
 		},
 		"26": {
 			Name:     "Merchant Account Information",
 			MinSize:  5,
 			MaxSize:  99,
-			Type:     template,
+			Type:     FieldTemplate,
 			Required: true,
 		},
 		"26-00": {
 			Name:     "GUI",
 			MaxSize:  14,
 			Required: true,
-			Type:     primitive,
-			Default:  PIXGui,
+			Type:     FieldPrimitive,
 		},
 		"26-01": {
 			Name:     "Chave",
 			MaxSize:  77,
 			Required: true,
-			Type:     primitive,
+			Type:     FieldPrimitive,
 		},
 		"26-02": {
 			Name:     "Info Adicional",
 			MaxSize:  72,
 			Required: false,
-			Type:     primitive,
+			Type:     FieldPrimitive,
 		},
 		"26-03": {
 			Name:     "FSS",
 			MaxSize:  8,
 			Required: false,
-			Type:     primitive,
+			Type:     FieldPrimitive,
 		},
 		"52": {
 			Name:     "Merchant Category Code",
 			MinSize:  4,
 			MaxSize:  4,
 			Required: true,
-			Type:     primitive,
-			// N/I
-			Default: "0000",
+			Type:     FieldPrimitive,
 		},
 		"53": {
 			Name:     "Transaction Currency",
 			MinSize:  3,
 			MaxSize:  3,
 			Required: true,
-			Type:     primitive,
-			// BRL
-			Default: "986",
+			Type:     FieldPrimitive,
 		},
 		"54": {
 			Name:     "Transaction Amount",
 			MinSize:  1,
 			MaxSize:  13,
 			Required: true,
-			Type:     primitive,
+			Type:     FieldPrimitive,
 		},
 		"58": {
 			Name:     "Country Code",
 			MaxSize:  2,
 			MinSize:  2,
 			Required: true,
-			Type:     primitive,
-			// ISO3166-1 alpha 2
-			Default: "BR",
+			Type:     FieldPrimitive,
 		},
 		"59": {
 			Name:     "Merchant Name",
 			MinSize:  1,
 			MaxSize:  25,
 			Required: true,
-			Type:     primitive,
+			Type:     FieldPrimitive,
 		},
 		"60": {
 			Name:     "Merchant City",
 			MinSize:  1,
 			MaxSize:  25,
 			Required: true,
-			Type:     primitive,
+			Type:     FieldPrimitive,
 		},
 		"61": {
 			Name:     "Postal Code",
 			MinSize:  1,
 			MaxSize:  99,
-			Type:     primitive,
+			Type:     FieldPrimitive,
 			Required: false,
 		},
 		"62": {
 			Name:     "Addional Data Field Template",
 			MinSize:  5,
 			MaxSize:  29,
-			Type:     template,
+			Type:     FieldTemplate,
 			Required: false,
 		},
 		"62-05": {
@@ -121,15 +113,14 @@ var (
 			MinSize:  1,
 			MaxSize:  25,
 			Required: false,
-			Type:     primitive,
-			Default:  "***",
+			Type:     FieldPrimitive,
 		},
 		"63": {
 			Name:     "CRC16",
 			MaxSize:  4,
 			MinSize:  4,
 			Required: true,
-			Type:     primitive,
+			Type:     FieldPrimitive,
 		},
 	}
 )
@@ -138,7 +129,6 @@ type Metadata struct {
 	Name     string
 	MaxSize  int
 	MinSize  int
-	Default  string
 	Type     string
 	Required bool
 }

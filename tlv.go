@@ -2,14 +2,18 @@ package qrpix
 
 import (
 	"strconv"
+	"strings"
 )
 
-// Represents a Type, Value, Lenght (TLV) object
+// Represents a Type, Value, Lenght (TLV) object.
+// TODO: Add a struct representing the data
 type TLV interface {
-	// Returns the (id + length + value) of a given field
-	TLV() (string, error)
+	// Returns the (id, length, value) of a given field
+	TLV() (id string, length string, value string, err error)
 	// Returns the field id
 	FieldID() string
+	// Return id + length + value
+	Code() (string, error)
 }
 
 // Represents a primitive object, which only contains one value
@@ -31,22 +35,29 @@ func (p Primitive) validationId() string {
 	return p.parentId + "-" + p.ID
 }
 
-func (p Primitive) TLV() (string, error) {
+func (p Primitive) TLV() (string, string, string, error) {
 	validationId := p.validationId()
 	if err := ValidateField(validationId, p.Value); err != nil {
-		return "", err
+		return "", "", "", err
 	}
-
 	// If not value was set, ignore
 	if p.Value == "" {
-		return "", nil
+		return "", "", "", nil
 	}
 	length, err := convertLength(p.Value)
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 
-	return p.ID + length + p.Value, nil
+	return p.ID, length, p.Value, nil
+}
+
+func (t Primitive) Code() (string, error) {
+	id, length, value, err := t.TLV()
+	if err != nil {
+		return "", err
+	}
+	return id + length + value, nil
 }
 
 // Represets a template object, which contains multiple values.
@@ -60,61 +71,44 @@ func (t Template) FieldID() string {
 	return t.ID
 }
 
-func (t Template) TLV() (string, error) {
+func (t Template) TLV() (string, string, string, error) {
 
-	var value string
+	b := strings.Builder{}
 
 	if len(t.values) == 0 || t.values == nil {
-		value = ""
+		b.WriteString("")
 	} else {
 		for _, p := range t.values {
-			tlv, err := p.TLV()
+			id, length, value, err := p.TLV()
 			if err != nil {
-				return "", err
+				return "", "", "", err
 			}
-
-			value += tlv
+			b.WriteString(id + length + value)
 		}
 	}
-
+	value := b.String()
 	if err := ValidateField(t.ID, value); err != nil {
-		return "", err
+		return "", "", "", err
 	}
 
 	limit, err := convertLength(value)
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 
-	return (t.ID + limit + value), nil
+	return t.ID, limit, value, nil
+}
+
+func (t Template) Code() (string, error) {
+	id, length, value, err := t.TLV()
+	if err != nil {
+		return "", err
+	}
+	return id + length + value, nil
 }
 
 func (t *Template) AddValue(id, value string) {
 	t.values = append(t.values, Primitive{ID: id, Value: value, parentId: t.ID})
-}
-
-func (t *Template) RemoveValue(id string) bool {
-	for i, v := range t.values {
-		if v.ID == id {
-			t.values = append(t.values[:i], t.values[i+1:]...)
-			return true
-		}
-	}
-	return false
-}
-
-func (t *Template) UpdateValue(id, value string) bool {
-	for _, v := range t.values {
-		if v.ID == id {
-			v.Value = value
-			return true
-		}
-	}
-	return false
-}
-
-func (t Template) GetValues() []Primitive {
-	return t.values
 }
 
 func convertLength(value string) (string, error) {

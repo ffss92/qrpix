@@ -11,8 +11,11 @@ const (
 )
 
 var (
+	ErrFieldIsRequired       = errors.New("field is required")
 	ErrFieldMetadataNotFound = errors.New("field metadata for provided id not found")
+)
 
+var (
 	IDMetadata = map[string]Metadata{
 		"00": {
 			Name:     "Payload Format Indicator",
@@ -133,15 +136,26 @@ type Metadata struct {
 	Required bool
 }
 
-// Validates a field value based on the provided id metadata
-func ValidateField(id, value string) error {
+func GetFieldMetadata(id string) (Metadata, error) {
 	meta, ok := IDMetadata[id]
 	if !ok {
-		return ErrFieldMetadataNotFound
+		return Metadata{}, ErrFieldMetadataNotFound
+	}
+	return meta, nil
+}
+
+// Validates a field value based on the provided id metadata
+func ValidateField(id, value string) error {
+	meta, err := GetFieldMetadata(id)
+	if err != nil {
+		return err
 	}
 
 	if !meta.Required && value == "" {
 		return nil
+	}
+	if meta.Required && value == "" {
+		return ErrFieldIsRequired
 	}
 	if len(value) > meta.MaxSize {
 		return fmt.Errorf("limit above max for field: %s", meta.Name)
@@ -149,8 +163,6 @@ func ValidateField(id, value string) error {
 	if len(value) < meta.MinSize {
 		return fmt.Errorf("limit below min for field: %s", meta.Name)
 	}
-	if meta.Required && value == "" {
-		return fmt.Errorf("no value set for required field: %s", meta.Name)
-	}
+
 	return nil
 }

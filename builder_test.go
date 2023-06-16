@@ -89,4 +89,52 @@ func TestBuilder(t *testing.T) {
 		}
 	})
 
+	t.Run("clear should erase all entries", func(t *testing.T) {
+		builder := Builder{}
+		builder.AddPayloadFormatIndicator("01")
+		builder.Clear()
+
+		if len(builder) != 0 {
+			t.Errorf("expected builder lenght of 0 after clear but got %v", len(builder))
+		}
+	})
+
+	t.Run("add transaction amount should convert int to float", func(t *testing.T) {
+		cases := []struct {
+			expected string
+			value    int
+		}{
+			{expected: "10.50", value: 1050},
+			{expected: "10.00", value: 1000},
+			{expected: "12.12", value: 1212},
+			{expected: "100.42", value: 10042},
+		}
+
+		for _, c := range cases {
+			builder := Builder{}
+			builder.AddTransactionAmount(c.value)
+			ta, ok := builder["54"]
+			if !ok {
+				t.Error("expected entry with id 54 (Transaction Amount) to be set")
+			}
+
+			_, _, value, err := ta.TLV()
+			if err != nil {
+				t.Errorf("unexpected error while getting transaction amount tlv: %v", err)
+			}
+			if value != c.expected {
+				t.Errorf("expected value to be %s but got %s", c.expected, value)
+			}
+		}
+	})
+
+	t.Run("add transaction of value 0 should be ignore", func(t *testing.T) {
+		builder := Builder{}
+		builder.AddTransactionAmount(0)
+		_, ok := builder["54"]
+		if ok {
+			t.Error("transaction value should be ignored for value 0 but was set")
+		}
+	})
+
 }

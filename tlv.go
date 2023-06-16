@@ -3,6 +3,8 @@ package qrpix
 import (
 	"strconv"
 	"strings"
+
+	"golang.org/x/exp/slices"
 )
 
 // Represents a Type, Value, Lenght (TLV) object.
@@ -14,6 +16,7 @@ type TLV interface {
 	FieldID() string
 	// Return id + length + value
 	Code() (string, error)
+	Unwrap() map[string]Primitive
 }
 
 // Represents a primitive object, which only contains one value
@@ -52,8 +55,12 @@ func (p Primitive) TLV() (string, string, string, error) {
 	return p.ID, length, p.Value, nil
 }
 
-func (t Primitive) Code() (string, error) {
-	id, length, value, err := t.TLV()
+func (p Primitive) Unwrap() map[string]Primitive {
+	return nil
+}
+
+func (p Primitive) Code() (string, error) {
+	id, length, value, err := p.TLV()
 	if err != nil {
 		return "", err
 	}
@@ -64,7 +71,7 @@ func (t Primitive) Code() (string, error) {
 // Template values also implement the TLV interface
 type Template struct {
 	ID     string
-	values []Primitive
+	values map[string]Primitive
 }
 
 func (t Template) FieldID() string {
@@ -75,10 +82,12 @@ func (t Template) TLV() (string, string, string, error) {
 
 	b := strings.Builder{}
 
+	primitives := t.Sorted()
+
 	if len(t.values) == 0 || t.values == nil {
 		b.WriteString("")
 	} else {
-		for _, p := range t.values {
+		for _, p := range primitives {
 			id, length, value, err := p.TLV()
 			if err != nil {
 				return "", "", "", err
@@ -108,7 +117,28 @@ func (t Template) Code() (string, error) {
 }
 
 func (t *Template) AddValue(id, value string) {
-	t.values = append(t.values, Primitive{ID: id, Value: value, parentId: t.ID})
+	if t.values == nil {
+		t.values = map[string]Primitive{}
+	}
+	t.values[id] = Primitive{ID: id, Value: value, parentId: t.ID}
+}
+
+func (t Template) Unwrap() map[string]Primitive {
+	return t.values
+}
+
+// Ensures consistency
+func (t Template) Sorted() []Primitive {
+	primitives := []Primitive{}
+	for _, v := range t.values {
+		primitives = append(primitives, v)
+	}
+	slices.SortFunc[Primitive](primitives, func(a, b Primitive) bool {
+		aid, _ := strconv.Atoi(a.ID)
+		bid, _ := strconv.Atoi(b.ID)
+		return aid < bid
+	})
+	return primitives
 }
 
 func convertLength(value string) (string, error) {

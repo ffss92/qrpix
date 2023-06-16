@@ -2,8 +2,48 @@ package qrpix
 
 import (
 	"errors"
+	"log"
 	"testing"
 )
+
+func TestStaticEncodeDecode(t *testing.T) {
+	cases := []*Static{
+		NewStatic("00000000000", "Fulano", "SAO PAULO", "abc123"),
+		NewStatic("+5599999999999", "José", "MANAUS", "sdf3dfs34e", WithTransactionAmount(1000)),
+		NewStatic("maria@email.com", "Maria", "OURO PRETO", "231dsad", WithTransactionAmount(1000), WithPostalCode("33400000")),
+		NewStatic("123e4567-e12b-12d1-a456-426655440000", "Maria", "BRASILIA", "sfdsdf", WithCountryCode("AR"), WithMerchantCategoryCode("9999")),
+	}
+	for _, c := range cases {
+		brCode, err := c.BRCode()
+		if err != nil {
+			t.Error(err)
+		}
+
+		p := NewParser()
+		static, err := p.ParseStatic(brCode)
+		if err != nil {
+			t.Error(err)
+		}
+		if static.Chave != c.Chave {
+			t.Errorf("expected chave to be %s but got %s", c.Chave, static.Chave)
+		}
+		if static.MerchantName != c.MerchantName {
+			t.Errorf("expected merchant name to be %s but got %s", c.MerchantName, static.MerchantName)
+		}
+		if static.TransactionAmount != c.TransactionAmount {
+			t.Errorf("expected transaction amount to be %v but got %v", c.TransactionAmount, static.TransactionAmount)
+		}
+		if static.PostalCode != c.PostalCode {
+			t.Errorf("expected postal code to be %s but got %s", c.PostalCode, static.PostalCode)
+		}
+		if static.MerchantCategoryCode != c.MerchantCategoryCode {
+			t.Errorf("expected merchant category code to be %s but got %s", c.MerchantCategoryCode, static.MerchantCategoryCode)
+		}
+		if static.CountryCode != c.CountryCode {
+			t.Errorf("expected country code to be %s but got %s", c.CountryCode, static.CountryCode)
+		}
+	}
+}
 
 func TestBaseParserMethods(t *testing.T) {
 
@@ -196,14 +236,23 @@ func TestParser(t *testing.T) {
 		builder, err := p.Parse(code)
 		if err != nil {
 			t.Errorf("unexpected error while parsing valid code: %v", err)
+			return
 		}
 		brCode, err := builder.Build()
 		if err != nil {
 			t.Error(err)
+			return
 		}
 		if brCode != code {
 			t.Errorf("expected %s but got %s", code, brCode)
 		}
+
+		static, err := p.ParseStatic(code)
+		if err != nil {
+			t.Error(err)
+		}
+
+		log.Println(static)
 	})
 
 	t.Run("invalid crc", func(t *testing.T) {

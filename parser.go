@@ -19,6 +19,7 @@ func NewParser() *Parser {
 	return &Parser{}
 }
 
+// Parses the BRCode into TLVs and returns a builder
 func (p *Parser) Parse(brCode string) (Builder, error) {
 	p.cur = 0 // Reset cursor
 	p.Code = brCode
@@ -49,16 +50,15 @@ func (p *Parser) Parse(brCode string) (Builder, error) {
 				return nil, fmt.Errorf("failed to parse primitive with id %s: %w", id, err)
 			}
 			primitive.Value = value
-			parts.Add(primitive)
+			parts.Add(&primitive)
 		case FieldTemplate:
 			template := Template{
-				ID: id,
+				ID:     id,
+				values: map[string]Primitive{},
 			}
-			values, err := p.parseTemplate(id)
-			if err != nil {
+			if err := p.parseTemplate(id, &template); err != nil {
 				return nil, fmt.Errorf("failed to parse template with id %s: %w", id, err)
 			}
-			template.values = values
 			parts.Add(template)
 		}
 	}
@@ -70,29 +70,89 @@ func (p *Parser) Parse(brCode string) (Builder, error) {
 	return parts, nil
 }
 
-func (p *Parser) parseTemplate(id string) ([]Primitive, error) {
-	primitives := []Primitive{}
+func (p *Parser) parseTemplate(id string, t *Template) error {
 	n, err := p.readLength()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	currPos := p.cur
 	for currPos+n != p.cur {
 		pid, err := p.readID()
 		if err != nil {
-			return nil, fmt.Errorf("failed to read template value id: %w", err)
+			return fmt.Errorf("failed to read template value id: %w", err)
 		}
 		value, err := p.parsePrimitive(id + "-" + pid)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse template primitive with id %s: %w", pid, err)
+			return fmt.Errorf("failed to parse template primitive with id %s: %w", pid, err)
 		}
-		primitives = append(primitives, Primitive{
-			ID:       pid,
-			Value:    value,
-			parentId: id,
-		})
+		t.AddValue(pid, value)
 	}
-	return primitives, nil
+	return nil
+}
+
+func (p *Parser) ParseStatic(brCode string) (*Static, error) {
+	builder, err := p.Parse(brCode)
+	if err != nil {
+		return nil, err
+	}
+
+	static := &Static{}
+
+	chave, err := builder.GetMerchantAccountInformationChave()
+	if err != nil {
+		return nil, err
+	}
+	static.Chave = chave
+
+	countryCode, err := builder.GetCountryCode()
+	if err != nil {
+		return nil, err
+	}
+	static.CountryCode = countryCode
+
+	catCode, err := builder.GetMerchantCategoryCode()
+	if err != nil {
+		return nil, err
+	}
+	static.MerchantCategoryCode = catCode
+
+	merchCity, err := builder.GetMerchantCity()
+	if err != nil {
+		return nil, err
+	}
+	static.MerchantCity = merchCity
+
+	currency, err := builder.GetTransactionCurrency()
+	if err != nil {
+		return nil, err
+	}
+	static.TransactionCurrency = currency
+
+	amount, err := builder.GetTransactionAmount()
+	if err != nil {
+		return nil, err
+	}
+	static.TransactionAmount = amount
+
+	postalCode, err := builder.GetPostalCode()
+	if err != nil {
+		return nil, err
+	}
+	static.PostalCode = postalCode
+
+	txId, err := builder.GetTransactionId()
+	if err != nil {
+		return nil, err
+	}
+	static.TransactionId = txId
+
+	merchName, err := builder.GetMerchanName()
+	if err != nil {
+		return nil, err
+	}
+	static.MerchantName = merchName
+
+	return static, nil
 }
 
 func (p *Parser) parsePrimitive(id string) (string, error) {

@@ -73,7 +73,7 @@ var (
 			Name:     "Transaction Amount",
 			MinSize:  1,
 			MaxSize:  13,
-			Required: true,
+			Required: false,
 			Type:     FieldPrimitive,
 		},
 		"58": {
